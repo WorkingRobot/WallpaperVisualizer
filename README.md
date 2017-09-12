@@ -1,6 +1,6 @@
 Wallpaper Visualizer
 --------------------
-[![Build status](https://ci.appveyor.com/api/projects/status/kys2ocm8vghom9qc?svg=true)](https://ci.appveyor.com/project/WorkingRobot/wallpapervisualizer)
+![Build status](https://ci.appveyor.com/api/projects/status/rfpdy0lrs1w103lm?svg=true)
 ### About
 This project is a wallpaper background for Windows computers. Running on OpenGL, it creates a real-time graph of the current audio coming from your speakers. Planned features are to add Spotify support, show the colors on your taskbar, and disable the main graph when a window is fullscreened or maximized.
 ### Installation
