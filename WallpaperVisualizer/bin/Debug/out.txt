@@ -1,0 +1,26 @@
+
+
+
+v_coord 0
+v_texcoord 1
+mvp 0
+mytexture 1
+
+
+
+v_coord 0
+mvp 0
+
+
+
+v_coord 0
+v_texcoord 1
+mvp 0
+mytexture 1
+
+
+
+v_coord 0
+v_color 2
+mvp 0
+[Warning] Resource leaked: TKSprites.TextRenderer.
