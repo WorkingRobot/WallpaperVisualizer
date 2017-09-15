@@ -65,7 +65,6 @@ C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualize
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\NAudio.dll
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\Newtonsoft.Json.dll
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\OpenTK.dll
-C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\PC_VolumeControl.dll
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\NAudio.xml
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\Newtonsoft.Json.xml
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\OpenTK.xml

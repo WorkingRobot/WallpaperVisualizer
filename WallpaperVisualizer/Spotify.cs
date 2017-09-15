@@ -67,6 +67,7 @@ namespace WallpaperVisualizer
             }
 
         }
+        #pragma warning disable 649
         class OAuthTokenJson
         {
             public string t;
@@ -124,5 +125,6 @@ namespace WallpaperVisualizer
                 public string message;
             }
         }
+        #pragma warning restore 649
     }
 }
