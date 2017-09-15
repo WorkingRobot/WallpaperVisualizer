@@ -32,6 +32,7 @@ namespace WallpaperVisualizer
         private int counter;
 
         static AudioGetter audioGetter;
+        static Spotify spotify;
 
         [STAThread]
         public static void Main()
@@ -39,7 +40,7 @@ namespace WallpaperVisualizer
             using (WallpaperVisualizer window = new WallpaperVisualizer())
             {
                 audioGetter = new AudioGetter(44100, 3);
-                audioGetter.Start();
+                spotify = new Spotify();
                 MainWindow = window;
                 window.Run(60.0, 60.0);
             }
@@ -56,7 +57,7 @@ namespace WallpaperVisualizer
         {
             base.OnLoad(e);
             renderer = new TextRenderer(40 * 5, 15 * 5);
-
+            audioGetter.Start();
             GL.ClearColor(Color.CornflowerBlue);
             GL.Viewport(0, 0, Width, Height);
 

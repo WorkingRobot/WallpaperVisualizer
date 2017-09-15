@@ -44,8 +44,6 @@ namespace WallpaperVisualizer
         private void waveIn_Data(object sender, WaveInEventArgs e)
         {
             i__ += 1;
-            Console.WriteLine((int)i__);
-            VolumeControl.VolumeControl.SetVolume((int)i__);
             if (!running || writeToData) return;
             double[] data = new double[e.Buffer.Length];
             for (int i = 0; i < e.Buffer.Length; ++i)
