@@ -1,6 +1,7 @@
 ﻿using OpenTK;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 
@@ -14,7 +15,7 @@ namespace WallpaperVisualizer
         /// s,v values are 0-1
         /// r,g,b values are 0-255
         /// </summary>
-        public static Vector3 HsvToRgb(double h, double S, double V)
+        public static Color HsvToRgb(double h, double S, double V)
         {
             // ######################################################################
             // T. Nathan Mundhenk
@@ -105,17 +106,18 @@ namespace WallpaperVisualizer
                         break;
                 }
             }
-            return new Vector3(Clamp(R), Clamp(G), Clamp(B));
+            return Color.FromArgb(Clamp(R*255),Clamp(G*255),Clamp(B*255));
         }
 
         /// <summary>
         /// Clamp a value to 0-255
         /// </summary>
-        static float Clamp(double i)
+        static int Clamp(double i)
         {
             if (i < 0) return 0;
-            if (i > 1) return 1;
-            return (float)i;
+            if (i > 255) return 255;
+            return (int)i;
         }
+
     }
 }

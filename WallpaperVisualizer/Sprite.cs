@@ -15,19 +15,11 @@ namespace WallpaperVisualizer
         /// true: bottom-left, false: center
         /// </summary>
         public bool anchor = true;
-        public float X;
-        public float Y;
 
         /// <summary>
         /// The shader to use for the sprite
         /// </summary>
         public ShaderProgram Shader;
-
-        /// <summary>
-        /// The color to use if the shader allows
-        /// </summary>
-        public Vector3[] color;
-        public bool useColor;
 
         /// <summary>
         /// The angle to rotate this Sprite around its center
@@ -63,6 +55,8 @@ namespace WallpaperVisualizer
         /// The last calculated MVP matrix for this Sprite
         /// </summary>
         public Matrix4 ModelViewProjectionMatrix = Matrix4.Identity;
+
+        public SpriteType Type { get; private set; }
 
         private float maxDist = 1.0f;
 
@@ -100,11 +94,12 @@ namespace WallpaperVisualizer
         /// <param name="textureID">The ID of the texture to draw on this Sprite</param>
         /// <param name="width">The width of the Sprite, in pixels</param>
         /// <param name="height">The height of the Sprite, in pixels</param>
-        public Sprite(int textureID, int width, int height, ShaderProgram shader)
+        public Sprite(int textureID, int width, int height, ShaderProgram shader, SpriteType type)
         {
             TextureID = textureID;
             Size = new Size(width, height);
             Shader = shader;
+            Type = type;
         }
 
         /// <summary>
@@ -251,6 +246,13 @@ namespace WallpaperVisualizer
 
             // Use the dot products to find if the point is inside or outside the Sprite
             return (0 < Vector2.Dot(AP, AB) && Vector2.Dot(AP, AB) < Vector2.Dot(AB, AB) && 0 < Vector2.Dot(AP, AD) && Vector2.Dot(AP, AD) < Vector2.Dot(AD, AD));
+        }
+
+        public enum SpriteType {
+            TASKBAR,
+            GRAPH,
+            SPOTIFY,
+            MISC
         }
     }
 }

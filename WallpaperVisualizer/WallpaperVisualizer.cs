@@ -22,13 +22,13 @@ namespace WallpaperVisualizer
         private Dictionary<string, int> textures = new Dictionary<string, int>();
         private List<Sprite> sprites = new List<Sprite>();
         private Matrix4 ortho;
-        private int currentShader = 3;
-        private List<ShaderProgram> shaders = new List<ShaderProgram>();
         private bool updated = false;
         private float avgfps = 60;
         private Random r = new Random();
 
         TextRenderer renderer;
+        ColorTexture colorPool;
+        ShaderProgram shader;
         private int counter;
 
         static AudioGetter audioGetter;
@@ -58,6 +58,7 @@ namespace WallpaperVisualizer
             base.OnLoad(e);
             renderer = new TextRenderer(40 * 5, 15 * 5);
             audioGetter.Start();
+            colorPool = new ColorTexture();
             GL.ClearColor(Color.CornflowerBlue);
             GL.Viewport(0, 0, Width, Height);
 
@@ -67,12 +68,9 @@ namespace WallpaperVisualizer
             textures.Add("opentksquare3", loadImage("opentksquare3.png"));
             textures.Add("opentksquare4", renderer.Texture);
 
-            // Load shaders
-            shaders.Add(new ShaderProgram("sprite.vert", "sprite.frag", true)); // Normal sprite
-            shaders.Add(new ShaderProgram("white.vert", "white.frag", true)); // Just draws the whole sprite white
-            shaders.Add(new ShaderProgram("onecolor.vert", "onecolor.frag", true)); // Uses the color in the upper-left corner of the sprite, but with the correct alpha
-            shaders.Add(new ShaderProgram("color.vert", "color.frag", true));
-            GL.UseProgram(shaders[currentShader].ProgramID);
+            // Load shader
+            shader = new ShaderProgram("sprite.vert", "sprite.frag", true);
+            GL.UseProgram(shader.ProgramID);
 
             GL.GenBuffers(1, out ibo_elements);
 
@@ -82,15 +80,25 @@ namespace WallpaperVisualizer
 
             for (int i = 0; i < 500; i++)
             {
-                sprites.Add(newSprite(i, 0, 1, r.Next(500)));
+                sprites.Add(newSprite(i, 0, 1, r.Next(500), Sprite.SpriteType.GRAPH));
             }
+            Sprite s1 = new Sprite(renderer.Texture, 50, 50, shader, Sprite.SpriteType.MISC);
+            s1.Position = new Vector2(500, 500);
+            //s1.Size = new SizeF(1f, 1f);
+            //s1.Rotation = 0f;
+            sprites.Add(s1);
         }
-        public Sprite newSprite(float x, float y, int width, int height)
+        public Sprite newSprite(float x, float y, int width, int height, int texture)
         {
-            Sprite ret = new Sprite(0, width, height, shaders[3]);
-            ret.color = new Vector3[] { new Vector3(1), new Vector3(1), new Vector3(1), new Vector3(1) };
+            Sprite ret = newSprite(x, y, width, height, Sprite.SpriteType.MISC);
+            ret.TextureID = texture;
+            ret.Shader = shader;
+            return ret;
+        }
+        public Sprite newSprite(float x, float y, int width, int height, Sprite.SpriteType type)
+        {
+            Sprite ret = new Sprite(colorPool.GetTexture(Color.OrangeRed), width, height, shader, type);
             ret.Position = new Vector2(x, y);
-            ret.useColor = true;
             return ret;
         }
 
@@ -109,8 +117,8 @@ namespace WallpaperVisualizer
 
                 int offset = 0;
 
-                GL.UseProgram(shaders[currentShader].ProgramID);
-                shaders[currentShader].EnableVertexAttribArrays();
+                GL.UseProgram(shader.ProgramID);
+                shader.EnableVertexAttribArrays();
                 foreach (Sprite s in sprites)
                 {
                     if (s.IsVisible)
@@ -120,13 +128,14 @@ namespace WallpaperVisualizer
                         GL.BindTexture(TextureTarget.Texture2D, s.TextureID);
 
                         GL.UniformMatrix4(s.Shader.GetUniform("mvp"), false, ref s.ModelViewProjectionMatrix);
-                        GL.Uniform1(shaders[currentShader].GetAttribute("mytexture"), s.TextureID);
+                        GL.Uniform1(shader.GetAttribute("mytexture"), s.TextureID);
+                        //Console.WriteLine(s.color.Z);
                         GL.DrawElements(BeginMode.Triangles, 6, DrawElementsType.UnsignedInt, offset * sizeof(uint));
                         offset += 6;
                     }
                 }
 
-                shaders[currentShader].DisableVertexAttribArrays();
+                shader.DisableVertexAttribArrays();
 
                 GL.Flush();
                 SwapBuffers();
@@ -144,21 +153,16 @@ namespace WallpaperVisualizer
         {
             base.OnUpdateFrame(e);
             audioGetter.writeToData = true;
-            double[] data_ = audioGetter.Data.Last();
+            double[] data = audioGetter.Data.Last();
             audioGetter.writeToData = false;
-            int ii = 0;
+            int i = 0;
             foreach (Sprite s in sprites)
             {
-                s.color = new Vector3[]
-                {
-                    Utils.HsvToRgb(((double)ii/data_.Length)*255,1,1),
-                    Utils.HsvToRgb(((double)ii/data_.Length)*255,1,1),
-                    Utils.HsvToRgb(((double)ii/data_.Length)*255,1,1),
-                    Utils.HsvToRgb(((double)ii/data_.Length)*255,1,1)
-                };
-                if (ii >= data_.Length) continue;
-                s.Size = new Size(1, (int)(data_[ii]*10d));
-                ii++;
+                if (s.Type != Sprite.SpriteType.GRAPH) continue;
+                s.TextureID = colorPool.GetTexture(Utils.HsvToRgb(((double)i / data.Length) * 255, 1, 1));
+                if (i >= data.Length) continue;
+                s.Size = new Size(1, (int)(data[i]*10d));
+                i++;
             }
             audioGetter.writeToData = false;
             KeyboardState keyboardState = OpenTK.Input.Keyboard.GetState();
@@ -194,14 +198,15 @@ namespace WallpaperVisualizer
                 CurrentView.X += moveSpeed * (float) e.Time;
             }
 
+            int viscount = 0;
             // Update graphics
             List<Vector2> verts = new List<Vector2>();
             List<Vector2> texcoords = new List<Vector2>();
             List<int> inds = new List<int>();
-            List<Vector3> colors = new List<Vector3>();
+            //List<Vector3> colors = new List<Vector3>();
 
             int vertcount = 0;
-            int viscount = 0;
+                
 
             // Get data for visible sprites
             foreach (Sprite s in sprites)
@@ -211,7 +216,7 @@ namespace WallpaperVisualizer
                     verts.AddRange(s.GetVertices());
                     texcoords.AddRange(s.GetTexCoords());
                     inds.AddRange(s.GetIndices(vertcount));
-                    colors.AddRange(s.color);
+                    //colors.Add(s.color);
                     vertcount += 4;
                     viscount++;
 
@@ -221,28 +226,22 @@ namespace WallpaperVisualizer
             }
 
             // Buffer vertex coordinates
-            GL.BindBuffer(BufferTarget.ArrayBuffer, shaders[currentShader].GetBuffer("v_coord"));
-            GL.BufferData<Vector2>(BufferTarget.ArrayBuffer, (IntPtr) (verts.Count * Vector2.SizeInBytes), verts.ToArray(), BufferUsageHint.StaticDraw);
-            GL.VertexAttribPointer(shaders[currentShader].GetAttribute("v_coord"), 2, VertexAttribPointerType.Float, false, 0, 0);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, shader.GetBuffer("v_coord"));
+            GL.BufferData<Vector2>(BufferTarget.ArrayBuffer, (IntPtr)(verts.Count * Vector2.SizeInBytes), verts.ToArray(), BufferUsageHint.StaticDraw);
+            GL.VertexAttribPointer(shader.GetAttribute("v_coord"), 2, VertexAttribPointerType.Float, false, 0, 0);
 
             // Buffer texture coords
-            GL.BindBuffer(BufferTarget.ArrayBuffer, shaders[currentShader].GetBuffer("v_texcoord"));
-            GL.BufferData<Vector2>(BufferTarget.ArrayBuffer, (IntPtr) (texcoords.Count * Vector2.SizeInBytes), texcoords.ToArray(), BufferUsageHint.StaticDraw);
-            GL.VertexAttribPointer(shaders[currentShader].GetAttribute("v_texcoord"), 2, VertexAttribPointerType.Float, true, 0, 0);
-
-            // Buffer vertex color if shader supports it
-            if (shaders[currentShader].GetAttribute("v_color") != -1)
-            {
-                GL.BindBuffer(BufferTarget.ArrayBuffer, shaders[currentShader].GetBuffer("v_color"));
-                GL.BufferData<Vector3>(BufferTarget.ArrayBuffer, (IntPtr)(colors.Count * Vector3.SizeInBytes), colors.ToArray(), BufferUsageHint.StaticDraw);
-                GL.VertexAttribPointer(shaders[currentShader].GetAttribute("v_color"), 3, VertexAttribPointerType.Float, true, 0, 0);
-            }
+            GL.BindBuffer(BufferTarget.ArrayBuffer, shader.GetBuffer("v_texcoord"));
+            GL.BufferData<Vector2>(BufferTarget.ArrayBuffer, (IntPtr)(texcoords.Count * Vector2.SizeInBytes), texcoords.ToArray(), BufferUsageHint.StaticDraw);
+            GL.VertexAttribPointer(shader.GetAttribute("v_texcoord"), 2, VertexAttribPointerType.Float, true, 0, 0);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
             // Buffer indices
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ibo_elements);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr) (inds.Count * sizeof(int)), inds.ToArray(), BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(inds.Count * sizeof(int)), inds.ToArray(), BufferUsageHint.StaticDraw);
+
+            
 
             updated = true;
 
@@ -253,7 +252,7 @@ namespace WallpaperVisualizer
             counter++;
             if (counter % 40 == 0)
             {
-                renderer.Clear(Color.Black);
+                renderer.Clear(Color.Transparent);
                 renderer.DrawString(Math.Round(avgfps, 1).ToString(), new Font(FontFamily.GenericSansSerif, 11 * 5),Brushes.White,PointF.Empty);
                 doNothing(renderer.Texture);
             }

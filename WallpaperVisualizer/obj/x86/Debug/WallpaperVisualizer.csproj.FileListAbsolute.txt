@@ -51,12 +51,6 @@ C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualize
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\opentksquare3.png
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\opentksquare.png
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\opentksquare2.png
-C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\onecolor.frag
-C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\onecolor.vert
-C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\color.frag
-C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\color.vert
-C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\white.frag
-C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\white.vert
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\sprite.frag
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\sprite.vert
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\WallpaperVisualizer.exe.config
