@@ -66,3 +66,5 @@ C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualize
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\x86\Debug\WallpaperVisualizer.csproj.CoreCompileInputs.cache
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\x86\Debug\WallpaperVisualizer.exe
 C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\x86\Debug\WallpaperVisualizer.pdb
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\color.frag
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Debug\color.vert

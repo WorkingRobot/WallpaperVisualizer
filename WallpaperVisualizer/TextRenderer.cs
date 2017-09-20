@@ -19,6 +19,8 @@ namespace WallpaperVisualizer
         int texture;
         Rectangle dirty_region;
         bool disposed;
+        public int width { private set; get; }
+        public int height { private set; get; }
 
         #region Constructors
 
@@ -35,10 +37,12 @@ namespace WallpaperVisualizer
                 throw new ArgumentOutOfRangeException("height ");
             if (GraphicsContext.CurrentContext == null)
                 throw new InvalidOperationException("No GraphicsContext is current on the calling thread.");
+            this.width = width;
+            this.height = height;
 
             bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             gfx = Graphics.FromImage(bmp);
-            gfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            gfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
             texture = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, texture);

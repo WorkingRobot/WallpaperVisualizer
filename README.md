@@ -7,8 +7,10 @@ This project is a wallpaper background for Windows computers. Running on OpenGL,
 All you have to do is download the executable and run it. It will create a JSON configuration for you in the current directory. It runs with default settings on the first run, and notifies you if a setting is incorrect or invalid.
 ### To-Do
 
- - Add Spotify support
- - Set window to wallpaper
- - Add taskbar colors
- - Disable main graph when a window is maximized or fullscreened
- - Add configuration
+| Feature | Progress |
+| ------ | ------ |
+| Add Spotify support | ![Progress](http://progressed.io/bar/90) |
+| Set window to wallpaper | ![Progress](http://progressed.io/bar/0) |
+| Add taskbar colors | ![Progress](http://progressed.io/bar/100) |
+| Disable main graph when a window is maximized or fullscreened | ![Progress](http://progressed.io/bar/25) |
+| Add configuration | ![Progress](http://progressed.io/bar/0) |

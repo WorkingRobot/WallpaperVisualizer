@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -12,6 +14,7 @@ namespace WallpaperVisualizer
     {
         public Result result;
         public bool on;
+        public bool newSong;
         private string oAuthToken;
         private string csrfToken;
         private const string hostname = "http://49664118.spotilocal.com:4380";
@@ -22,7 +25,7 @@ namespace WallpaperVisualizer
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
             oAuthToken = GetOAuthToken();
             csrfToken = GetCSRFToken();
-            timer = new Timer(GetStatus, "", 100, 1000);
+            timer = new Timer(GetStatus, "", 100, 500);
         }
         private string getRequest(string url)
         {
@@ -62,11 +65,30 @@ namespace WallpaperVisualizer
             }
             else
             {
-                result = JsonConvert.DeserializeObject<Result>(output);
+                Result result = JsonConvert.DeserializeObject<Result>(output);
+                if (this.result == null)
+                {
+                    newSong = true;
+                }
+                else if (result.track.track_resource.uri != this.result.track.track_resource.uri)
+                {
+                    newSong = true;
+                }
+                this.result = result;
                 on = true;
             }
 
         }
+
+        public Bitmap GetArtwork(string uri)
+        {
+            WebClient client = new WebClient();
+            client.Headers.Add("Origin", "https://open.spotify.com");
+            client.Headers.Add("User-Agent", ua);
+            ArtworkResponse response = JsonConvert.DeserializeObject<ArtworkResponse>(Encoding.UTF8.GetString(Encoding.Default.GetBytes(client.DownloadString("https://open.spotify.com/oembed?url=" + uri))));
+            return new Bitmap(new MemoryStream(client.DownloadData(response.thumbnail_url)));
+        }
+
         #pragma warning disable 649
         class OAuthTokenJson
         {
@@ -75,6 +97,20 @@ namespace WallpaperVisualizer
         class CSRFTokenJson
         {
             public string token;
+        }
+        class ArtworkResponse
+        {
+            public int height;
+            public int width;
+            public string html;
+            public string type;
+            public string version;
+            public int thumbnail_height;
+            public int thumbnail_width;
+            public string thumbnail_url;
+            public string title;
+            public string provider_name;
+            public string provider_url;
         }
         public class Result
         {

@@ -56,7 +56,10 @@ namespace WallpaperVisualizer
         /// </summary>
         public Matrix4 ModelViewProjectionMatrix = Matrix4.Identity;
 
+        public Vector4 color;
+
         public SpriteType Type { get; private set; }
+        public short Name { get; private set; }
 
         private float maxDist = 1.0f;
 
@@ -81,11 +84,9 @@ namespace WallpaperVisualizer
         /// </summary>
         public void CalculateModelMatrix()
         {
-            Vector3 translation = new Vector3();
+            //Vector3 translation = new Vector3(Position.X - WallpaperVisualizer.MainWindow.ClientSize.Width / 2 - WallpaperVisualizer.MainWindow.CurrentView.X, Position.Y - WallpaperVisualizer.MainWindow.ClientSize.Height / 2 - WallpaperVisualizer.MainWindow.CurrentView.Y, 0.0f);
 
-            translation = new Vector3(Position.X - WallpaperVisualizer.MainWindow.ClientSize.Width / 2 - WallpaperVisualizer.MainWindow.CurrentView.X, Position.Y - WallpaperVisualizer.MainWindow.ClientSize.Height / 2 - WallpaperVisualizer.MainWindow.CurrentView.Y, 0.0f);
-
-            ModelMatrix = Matrix4.CreateScale(Scale.X, Scale.Y, 1.0f) * Matrix4.CreateRotationZ(Rotation) * Matrix4.CreateTranslation(translation);
+            ModelMatrix = Matrix4.CreateScale(Scale.X, Scale.Y, 1.0f) * Matrix4.CreateRotationZ(Rotation) * Matrix4.CreateTranslation(new Vector3(Position.X - WallpaperVisualizer.MainWindow.ClientSize.Width / 2 - WallpaperVisualizer.MainWindow.CurrentView.X, Position.Y - WallpaperVisualizer.MainWindow.ClientSize.Height / 2 - WallpaperVisualizer.MainWindow.CurrentView.Y, 0.0f));
         }
 
         /// <summary>
@@ -94,12 +95,13 @@ namespace WallpaperVisualizer
         /// <param name="textureID">The ID of the texture to draw on this Sprite</param>
         /// <param name="width">The width of the Sprite, in pixels</param>
         /// <param name="height">The height of the Sprite, in pixels</param>
-        public Sprite(int textureID, int width, int height, ShaderProgram shader, SpriteType type)
+        public Sprite(int textureID, int width, int height, ShaderProgram shader, SpriteType type, short name)
         {
             TextureID = textureID;
             Size = new Size(width, height);
             Shader = shader;
             Type = type;
+            Name = name;
         }
 
         /// <summary>
@@ -150,17 +152,7 @@ namespace WallpaperVisualizer
         /// <returns>Array of indices to draw</returns>
         public int[] GetIndices(int offset = 0)
         {
-            int[] indices = new int[] { 0, 1, 2, 0, 2, 3 };
-
-            if (offset != 0)
-            {
-                for (int i = 0; i < indices.Length; i++)
-                {
-                    indices[i] += offset;
-                }
-            }
-
-            return indices;
+            return new int[] { 0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset };
         }
 
         /// <summary>
@@ -170,7 +162,8 @@ namespace WallpaperVisualizer
         {
             get
             {
-                return Position.X + LongestSide > WallpaperVisualizer.MainWindow.CurrentView.X && Position.X - LongestSide < WallpaperVisualizer.MainWindow.CurrentView.X + WallpaperVisualizer.MainWindow.CurrentView.Width && Position.Y + LongestSide > WallpaperVisualizer.MainWindow.CurrentView.Y && Position.Y - LongestSide < WallpaperVisualizer.MainWindow.CurrentView.Y + WallpaperVisualizer.MainWindow.CurrentView.Height;
+                return true;
+                //return Position.X + LongestSide > WallpaperVisualizer.MainWindow.CurrentView.X && Position.X - LongestSide < WallpaperVisualizer.MainWindow.CurrentView.X + WallpaperVisualizer.MainWindow.CurrentView.Width && Position.Y + LongestSide > WallpaperVisualizer.MainWindow.CurrentView.Y && Position.Y - LongestSide < WallpaperVisualizer.MainWindow.CurrentView.Y + WallpaperVisualizer.MainWindow.CurrentView.Height;
             }
         }
 
@@ -187,7 +180,7 @@ namespace WallpaperVisualizer
         /// <summary>
         /// The length of the longest side of the rectangle drawn for this Sprite
         /// </summary>
-        public float LongestSide { get { return Math.Max(Size.Width, Size.Height); } }
+        public float LongestSide { get { return Size.Width;/*return Math.Max(Size.Width, Size.Height);*/ } }
 
         /// <summary>
         /// The top-left corner of this Sprite

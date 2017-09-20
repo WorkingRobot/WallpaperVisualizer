@@ -79,7 +79,6 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ColorTexture.cs" />
     <Content Include="opentksquare3.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -94,6 +93,12 @@
     <None Include="app.config" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
+    <None Include="color.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="color.vert">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="sprite.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

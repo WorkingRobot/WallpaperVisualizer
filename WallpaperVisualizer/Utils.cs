@@ -15,7 +15,7 @@ namespace WallpaperVisualizer
         /// s,v values are 0-1
         /// r,g,b values are 0-255
         /// </summary>
-        public static Color HsvToRgb(double h, double S, double V)
+        public static Vector4 HsvToRgb(double h, double S, double V)
         {
             // ######################################################################
             // T. Nathan Mundhenk
@@ -106,18 +106,51 @@ namespace WallpaperVisualizer
                         break;
                 }
             }
-            return Color.FromArgb(Clamp(R*255),Clamp(G*255),Clamp(B*255));
+            return new Vector4(Clamp(R),Clamp(G),Clamp(B),1);
         }
 
         /// <summary>
         /// Clamp a value to 0-255
         /// </summary>
-        static int Clamp(double i)
+        static float Clamp(double i)
         {
             if (i < 0) return 0;
-            if (i > 255) return 255;
-            return (int)i;
+            if (i > 1) return 1;
+            return (float)i;
         }
 
+        public static double[][] Zip(List<double[]> inp)
+        {
+            List<double[]> input;
+            lock (inp)
+            {
+                input = new List<double[]>(inp);
+            }
+            double[][] ret = new double[input[0].Length][];
+            for(int i = 0; i < ret.Length; ++i)
+            {
+                ret[i] = new double[input.Count];
+                for (int j = 0; j < input.Count; ++j)
+                {
+                    if (input[j] == null) continue;
+                    ret[i][j] = input[j][i];
+                }
+            }
+            return ret;
+        }
+
+        public static double[] Average(double[][] input)
+        {
+            return (from i in input select i.Average()).ToArray();
+        }
+
+        public static string Trim(string input, int length)
+        {
+            if (input.Length > length)
+            {
+                return input.Substring(0, length) + "...";
+            }
+            return input;
+        }
     }
 }

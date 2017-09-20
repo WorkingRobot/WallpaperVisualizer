@@ -9,20 +9,22 @@ using System.Text;
 
 namespace WallpaperVisualizer
 {
+    // Many of the values in here are personal preference that I just like.
     class AudioGetter
     {
         private WaveInEvent waveIn;
-        public List<double[]> Data { get; private set; }
+        public volatile List<double[]> Data;
         private int responsiveness;
         private bool running;
-        public volatile bool writeToData = false;
         double i__ = 0;
+
+
         public AudioGetter(int frequency, int responsiveness)
         {
             this.responsiveness = responsiveness;
             Data = new List<double[]>(responsiveness);
             waveIn = new WaveInEvent();
-            waveIn.DeviceNumber = 0;
+            waveIn.DeviceNumber = 0; //I think this is the default input device. I'm not too sure. I may need some testing to figure out which one is the stereo mix.
             waveIn.NumberOfBuffers = 10;
             waveIn.BufferMilliseconds = 10;
             waveIn.WaveFormat = new WaveFormat(frequency, 1);
@@ -44,22 +46,24 @@ namespace WallpaperVisualizer
         private void waveIn_Data(object sender, WaveInEventArgs e)
         {
             i__ += 1;
-            if (!running || writeToData) return;
+            if (!running) return;
             double[] data = new double[e.Buffer.Length];
             for (int i = 0; i < e.Buffer.Length; ++i)
             {
                 data[i] = e.Buffer[i] * FastFourierTransform.HannWindow(i, e.Buffer.Length);
             }
             data = FFT.fft(data);
-            data = data.Take(e.Buffer.Length / 2).ToArray();
-            //data = CalcUtil.Smooth(CalcUtil.Smooth(data, 20), 1);
-            if (writeToData) return;
-            this.Data.Add(data);
-            if (writeToData) return;
-            if (this.Data.Count > responsiveness)
+            data = data.Take((int)(e.Buffer.Length / 1.764)).ToArray();
+            data = CalcUtil.Smooth(CalcUtil.Smooth(data, WallpaperVisualizer.MainWindow.a), WallpaperVisualizer.MainWindow.b);
+            for (int i = 0; i < data.Length; ++i)
             {
-                if (writeToData) return;
-                this.Data.RemoveAt(0);
+                //Looks better in my preference
+                data[i] *= FastFourierTransform.HammingWindow(i, data.Length/2);
+            }
+            Data.Add(data);
+            if (Data.Count > responsiveness)
+            {
+                Data.RemoveAt(0);
             }
         }
     }
@@ -115,7 +119,8 @@ namespace WallpaperVisualizer
 
             for (int i = 0; i < length; i++)
             {
-                target[i] = Math.Abs(new System.Numerics.Complex(data[i].X, data[i].Y).Real);
+                //Imaginary looks better in my taste
+                target[i] = Math.Abs(new System.Numerics.Complex(data[i].X, data[i].Y).Imaginary);
             }
             return target;
         }

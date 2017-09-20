@@ -10,6 +10,8 @@ using OpenTK.Input;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using OpenTK.Graphics;
+using NAudio.CoreAudioApi;
+using NAudio.Wave;
 
 namespace WallpaperVisualizer
 {
@@ -21,25 +23,33 @@ namespace WallpaperVisualizer
         private int ibo_elements;
         private Dictionary<string, int> textures = new Dictionary<string, int>();
         private List<Sprite> sprites = new List<Sprite>();
+        private Sprite songArtwork;
         private Matrix4 ortho;
         private bool updated = false;
-        private float avgfps = 60;
         private Random r = new Random();
 
-        TextRenderer renderer;
-        ColorTexture colorPool;
+        TextRenderer fpsRenderer;
+        TextRenderer spotifyRenderer;
         ShaderProgram shader;
+        ShaderProgram colorShader;
+        MMDevice speakers;
         private int counter;
+        private bool hidden;
 
         static AudioGetter audioGetter;
         static Spotify spotify;
+
+        public int a = 5;
+        public int b = 2;
+        public int c = 363;
+        private const int trimpoint = 50;
 
         [STAThread]
         public static void Main()
         {
             using (WallpaperVisualizer window = new WallpaperVisualizer())
             {
-                audioGetter = new AudioGetter(44100, 3);
+                audioGetter = new AudioGetter(44100, 10);
                 spotify = new Spotify();
                 MainWindow = window;
                 window.Run(60.0, 60.0);
@@ -56,9 +66,17 @@ namespace WallpaperVisualizer
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            renderer = new TextRenderer(40 * 5, 15 * 5);
+            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            foreach (MMDevice device in enumerator.EnumerateAudioEndPoints(DataFlow.Render,DeviceState.Active))
+            {
+                if (speakers == null) speakers = device;
+                if (!speakers.FriendlyName.Contains("Speakers") && device.FriendlyName.Contains("Speakers")) speakers = device;
+                if (device.FriendlyName.Contains("Speakers") && !speakers.FriendlyName.Contains("Realtek")) speakers = device;
+            }
+            //Console.WriteLine(new MMDeviceEnumerator().GetDevice(audioGetter.waveIn.DeviceNumber.ToString()).AudioEndpointVolume.MasterVolumeLevelScalar);
+            fpsRenderer = new TextRenderer(40 * 5, 15 * 5);
+            spotifyRenderer = new TextRenderer(400, 50);
             audioGetter.Start();
-            colorPool = new ColorTexture();
             GL.ClearColor(Color.CornflowerBlue);
             GL.Viewport(0, 0, Width, Height);
 
@@ -66,10 +84,10 @@ namespace WallpaperVisualizer
             textures.Add("opentksquare", loadImage("opentksquare.png"));
             textures.Add("opentksquare2", loadImage("opentksquare2.png"));
             textures.Add("opentksquare3", loadImage("opentksquare3.png"));
-            textures.Add("opentksquare4", renderer.Texture);
 
             // Load shader
             shader = new ShaderProgram("sprite.vert", "sprite.frag", true);
+            colorShader = new ShaderProgram("color.vert", "color.frag", true);
             GL.UseProgram(shader.ProgramID);
 
             GL.GenBuffers(1, out ibo_elements);
@@ -78,26 +96,31 @@ namespace WallpaperVisualizer
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
 
-            for (int i = 0; i < 500; i++)
+            for (short i = 0; i < 500; i++)
             {
-                sprites.Add(newSprite(i, 0, 1, r.Next(500), Sprite.SpriteType.GRAPH));
+                Sprite t = newSprite(i, 0, 1, 0, Sprite.SpriteType.GRAPH, i);
+                t.color = Utils.HsvToRgb(((double)i / 500) * 360, 1, 1);
+                sprites.Add(t);
+                if (i % 2 == 0)
+                {
+                    sprites.Add(newSprite(i, -32, 2, 32, Sprite.SpriteType.TASKBAR, i));
+                }
             }
-            Sprite s1 = new Sprite(renderer.Texture, 50, 50, shader, Sprite.SpriteType.MISC);
+            Sprite s1 = new Sprite(fpsRenderer.Texture, fpsRenderer.width, fpsRenderer.height, shader, Sprite.SpriteType.MISC, -1);
             s1.Position = new Vector2(500, 500);
-            //s1.Size = new SizeF(1f, 1f);
-            //s1.Rotation = 0f;
+            Sprite s2 = new Sprite(spotifyRenderer.Texture, spotifyRenderer.width, spotifyRenderer.height, shader, Sprite.SpriteType.SPOTIFY, 0);
+            s2.Position = new Vector2(0, 0);
+            songArtwork = new Sprite(GL.GenTexture(), 128, 128, shader, Sprite.SpriteType.SPOTIFY, 1);
+            songArtwork.Position = new Vector2(200, 200);
             sprites.Add(s1);
+            sprites.Add(s2);
+            sprites.Add(songArtwork);
+            hidden = false;
         }
-        public Sprite newSprite(float x, float y, int width, int height, int texture)
+        public Sprite newSprite(float x, float y, int width, int height, Sprite.SpriteType type, short name)
         {
-            Sprite ret = newSprite(x, y, width, height, Sprite.SpriteType.MISC);
-            ret.TextureID = texture;
-            ret.Shader = shader;
-            return ret;
-        }
-        public Sprite newSprite(float x, float y, int width, int height, Sprite.SpriteType type)
-        {
-            Sprite ret = new Sprite(colorPool.GetTexture(Color.OrangeRed), width, height, shader, type);
+            Sprite ret = new Sprite(1, width, height, colorShader, type, name);
+            ret.color = new Vector4(1, 1, 1, 1); // white with 100% opacity
             ret.Position = new Vector2(x, y);
             return ret;
         }
@@ -121,15 +144,15 @@ namespace WallpaperVisualizer
                 shader.EnableVertexAttribArrays();
                 foreach (Sprite s in sprites)
                 {
-                    if (s.IsVisible)
+                    if (!hidden || s.Type!=Sprite.SpriteType.GRAPH)
                     {
                         GL.UseProgram(s.Shader.ProgramID);
 
                         GL.BindTexture(TextureTarget.Texture2D, s.TextureID);
 
                         GL.UniformMatrix4(s.Shader.GetUniform("mvp"), false, ref s.ModelViewProjectionMatrix);
+                        GL.Uniform4(s.Shader.GetUniform("_color"), ref s.color);
                         GL.Uniform1(shader.GetAttribute("mytexture"), s.TextureID);
-                        //Console.WriteLine(s.color.Z);
                         GL.DrawElements(BeginMode.Triangles, 6, DrawElementsType.UnsignedInt, offset * sizeof(uint));
                         offset += 6;
                     }
@@ -152,26 +175,36 @@ namespace WallpaperVisualizer
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             base.OnUpdateFrame(e);
-            audioGetter.writeToData = true;
-            double[] data = audioGetter.Data.Last();
-            audioGetter.writeToData = false;
-            int i = 0;
+            double[] data;
+            lock (audioGetter.Data)
+            {
+                data = Utils.Average(Utils.Zip(audioGetter.Data));
+            }
+            double volume = speakers.AudioEndpointVolume.MasterVolumeLevelScalar;
             foreach (Sprite s in sprites)
             {
-                if (s.Type != Sprite.SpriteType.GRAPH) continue;
-                s.TextureID = colorPool.GetTexture(Utils.HsvToRgb(((double)i / data.Length) * 255, 1, 1));
-                if (i >= data.Length) continue;
-                s.Size = new Size(1, (int)(data[i]*10d));
-                i++;
+                if (s.Type == Sprite.SpriteType.GRAPH || s.Type == Sprite.SpriteType.TASKBAR)
+                {
+                    if (s.Name >= data.Length) continue;
+                    int height = (int)(data[s.Name] * c * volume);
+                    if (s.Type == Sprite.SpriteType.GRAPH && !hidden)
+                    {
+                        s.Size = new Size(1, height);
+                    }
+                    else if (s.Type==Sprite.SpriteType.TASKBAR)
+                    {
+                        s.color = Utils.HsvToRgb(((double)s.Name / data.Length) * 255, Math.Min(1,height/75d), 0.9d);
+                    }
+                }
             }
-            audioGetter.writeToData = false;
             KeyboardState keyboardState = OpenTK.Input.Keyboard.GetState();
 
             // Quit if requested
             if (keyboardState[Key.Escape])
             {
                 audioGetter.Stop();
-                renderer.Dispose();
+                fpsRenderer.Dispose();
+                spotifyRenderer.Dispose();
                 Exit();
             }
 
@@ -188,6 +221,7 @@ namespace WallpaperVisualizer
                 CurrentView.Y -= moveSpeed * (float) e.Time;
             }
 
+
             // Left-right movement
             if (keyboardState[Key.Left])
             {
@@ -197,13 +231,12 @@ namespace WallpaperVisualizer
             {
                 CurrentView.X += moveSpeed * (float) e.Time;
             }
-
-            int viscount = 0;
+            
             // Update graphics
             List<Vector2> verts = new List<Vector2>();
             List<Vector2> texcoords = new List<Vector2>();
             List<int> inds = new List<int>();
-            //List<Vector3> colors = new List<Vector3>();
+            List<Vector4> colors = new List<Vector4>();
 
             int vertcount = 0;
                 
@@ -211,14 +244,12 @@ namespace WallpaperVisualizer
             // Get data for visible sprites
             foreach (Sprite s in sprites)
             {
-                if (s.IsVisible)
+                if (!hidden || s.Type != Sprite.SpriteType.GRAPH)
                 {
                     verts.AddRange(s.GetVertices());
                     texcoords.AddRange(s.GetTexCoords());
                     inds.AddRange(s.GetIndices(vertcount));
-                    //colors.Add(s.color);
                     vertcount += 4;
-                    viscount++;
 
                     s.CalculateModelMatrix();
                     s.ModelViewProjectionMatrix = s.ModelMatrix * ortho;
@@ -245,16 +276,21 @@ namespace WallpaperVisualizer
 
             updated = true;
 
-            // Display average FPS and sprite statistics in title bar
-            avgfps = (avgfps + (1.0f / (float) e.Time)) / 2.0f;
-            Title = String.Format("OpenTK Sprite Demo ({0} sprites, {1} drawn, FPS:{2:0.00})", sprites.Count, viscount, avgfps);
-
             counter++;
             if (counter % 40 == 0)
             {
-                renderer.Clear(Color.Transparent);
-                renderer.DrawString(Math.Round(avgfps, 1).ToString(), new Font(FontFamily.GenericSansSerif, 11 * 5),Brushes.White,PointF.Empty);
-                doNothing(renderer.Texture);
+                fpsRenderer.Clear(Color.Transparent);
+                double fps = Math.Min(60,Math.Round((UpdateFrequency + RenderFrequency) / 2, 1));
+                fpsRenderer.DrawString(fps.ToString(), new Font(FontFamily.GenericSansSerif, 11*5),fps>45 ? Brushes.White : Brushes.Red,PointF.Empty);
+                if (spotify.newSong)
+                {
+                    spotifyRenderer.Clear(Color.Transparent);
+                    spotifyRenderer.DrawString(String.Format("{0}\n{1}\n{2}", Utils.Trim(spotify.result.track.track_resource.name, trimpoint), Utils.Trim(spotify.result.track.artist_resource.name, trimpoint), Utils.Trim(spotify.result.track.album_resource.name, trimpoint)), new Font(FontFamily.GenericSansSerif, 11), Brushes.White, PointF.Empty);
+                    loadImage(spotify.GetArtwork(spotify.result.track.track_resource.uri), songArtwork.TextureID);
+                    spotify.newSong = false;
+                }
+                doNothing(spotifyRenderer.Texture);
+                doNothing(fpsRenderer.Texture);
             }
         }
         private void doNothing(Object o) { return; }
@@ -262,11 +298,10 @@ namespace WallpaperVisualizer
         /// Loads a texture from a Bitmap
         /// </summary>
         /// <param name="image">Bitmap to make a texture from</param>
+        /// <param name="texID">Texture ID to set</param>
         /// <returns>ID of texture, or -1 if there is an error</returns>
-        private int loadImage(Bitmap image)
+        private int loadImage(Bitmap image, int texID)
         {
-            int texID = GL.GenTexture();
-
             GL.BindTexture(TextureTarget.Texture2D, texID);
             BitmapData data = image.LockBits(new System.Drawing.Rectangle(0, 0, image.Width, image.Height),
                 ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
@@ -292,12 +327,17 @@ namespace WallpaperVisualizer
             try
             {
                 Image file = Image.FromFile(filename);
-                return loadImage(new Bitmap(file));
+                return loadImage(new Bitmap(file), GL.GenTexture());
             }
-            catch (FileNotFoundException e)
+            catch (FileNotFoundException)
             {
                 return -1;
             }
+        }
+
+        public int loadImage(Bitmap bitmap)
+        {
+            return loadImage(bitmap, GL.GenTexture());
         }
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
@@ -315,7 +355,7 @@ namespace WallpaperVisualizer
             foreach (Sprite s in sprites)
             {
                 // We can only click on visible Sprites
-                if (s.IsVisible)
+                if (!hidden || s.Type != Sprite.SpriteType.GRAPH)
                 {
                     if (s.IsInside(clickPoint))
                     {
@@ -341,6 +381,35 @@ namespace WallpaperVisualizer
                     clickedSprite.TextureID = textures["opentksquare"];
                 }
             }
+        }
+
+        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            if (e.Key == Key.Q)
+            {
+                a++;
+            }
+            else if (e.Key == Key.A)
+            {
+                a--;
+            }
+            if (e.Key == Key.W)
+            {
+                b++;
+            }
+            else if (e.Key == Key.S)
+            {
+                b--;
+            }
+            if (e.Key == Key.E)
+            {
+                c++;
+            }
+            else if (e.Key == Key.D)
+            {
+                c--;
+            }
+            Console.WriteLine("A: " + a + " B: " + b + " C: " + c);
         }
     }
 }
