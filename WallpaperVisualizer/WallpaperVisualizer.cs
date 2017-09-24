@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -7,11 +6,7 @@ using System.IO;
 using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
-using System.Threading.Tasks;
-using System.Diagnostics;
-using OpenTK.Graphics;
 using NAudio.CoreAudioApi;
-using NAudio.Wave;
 
 namespace WallpaperVisualizer
 {
@@ -24,6 +19,7 @@ namespace WallpaperVisualizer
         private Dictionary<string, int> textures = new Dictionary<string, int>();
         private List<Sprite> sprites = new List<Sprite>();
         private Sprite songArtwork;
+        private Sprite spotifyText;
         private Matrix4 ortho;
         private bool updated = false;
         private Random r = new Random();
@@ -57,8 +53,9 @@ namespace WallpaperVisualizer
         }
 
         public WallpaperVisualizer()
-            : base(800, 600, new OpenTK.Graphics.GraphicsMode(new OpenTK.Graphics.ColorFormat(8, 8, 8, 8), 3, 3, 4), "OpenTK Sprite Demo", GameWindowFlags.Default, DisplayDevice.Default, 3, 0, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible)
+            : base(DisplayDevice.Default.Width, DisplayDevice.Default.Height, new OpenTK.Graphics.GraphicsMode(new OpenTK.Graphics.ColorFormat(8, 8, 8, 8), 3, 3, 4), "OpenTK Sprite Demo", GameWindowFlags.Fullscreen, DisplayDevice.Default, 3, 0, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible)
         {
+            WallpaperSetter.SetToWallpaper(WindowInfo.Handle);
             CurrentView.Size = new SizeF(ClientSize.Width, ClientSize.Height);
             ortho = Matrix4.CreateOrthographic(ClientSize.Width, ClientSize.Height, 1.0f, 50.0f);
         }
@@ -108,12 +105,12 @@ namespace WallpaperVisualizer
             }
             Sprite s1 = new Sprite(fpsRenderer.Texture, fpsRenderer.width, fpsRenderer.height, shader, Sprite.SpriteType.MISC, -1);
             s1.Position = new Vector2(500, 500);
-            Sprite s2 = new Sprite(spotifyRenderer.Texture, spotifyRenderer.width, spotifyRenderer.height, shader, Sprite.SpriteType.SPOTIFY, 0);
-            s2.Position = new Vector2(0, 0);
+            spotifyText = new Sprite(spotifyRenderer.Texture, spotifyRenderer.width, spotifyRenderer.height, shader, Sprite.SpriteType.SPOTIFY, 0);
+            spotifyText.Position = new Vector2(0, 0);
             songArtwork = new Sprite(GL.GenTexture(), 128, 128, shader, Sprite.SpriteType.SPOTIFY, 1);
             songArtwork.Position = new Vector2(200, 200);
             sprites.Add(s1);
-            sprites.Add(s2);
+            sprites.Add(spotifyText);
             sprites.Add(songArtwork);
             hidden = false;
         }
@@ -286,7 +283,15 @@ namespace WallpaperVisualizer
                 {
                     spotifyRenderer.Clear(Color.Transparent);
                     spotifyRenderer.DrawString(String.Format("{0}\n{1}\n{2}", Utils.Trim(spotify.result.track.track_resource.name, trimpoint), Utils.Trim(spotify.result.track.artist_resource.name, trimpoint), Utils.Trim(spotify.result.track.album_resource.name, trimpoint)), new Font(FontFamily.GenericSansSerif, 11), Brushes.White, PointF.Empty);
+                    
                     loadImage(spotify.GetArtwork(spotify.result.track.track_resource.uri), songArtwork.TextureID);
+
+                    // 500 is the width, 300 is the height at which the objects are centered at, 25 is the space between the 2 objects.
+                    int x = (int)((500 - (spotifyRenderer.text_size.Width + songArtwork.Size.Width + 25)) / 2);
+                    songArtwork.Position = new Vector2(x, 300 - songArtwork.Size.Height / 2);
+                    spotifyText.Position = new Vector2(500 - x - spotifyRenderer.text_size.Width, 300 - spotifyRenderer.text_size.Height / 2);
+                    Console.WriteLine(spotifyText.Position);
+                    Console.WriteLine(songArtwork.Position);
                     spotify.newSong = false;
                 }
                 doNothing(spotifyRenderer.Texture);

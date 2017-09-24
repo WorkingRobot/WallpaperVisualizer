@@ -77,11 +77,10 @@ namespace WallpaperVisualizer
                 AttributeInfo info = new AttributeInfo();
                 int length = 0;
 
-                StringBuilder name = new StringBuilder();
+                string name = "";
+                GL.GetActiveAttrib(ProgramID, i, 256, out length, out info.size, out info.type, out name);
 
-                GL.GetActiveAttrib(ProgramID, i, 256, out length, out info.size, out info.type, name);
-
-                info.name = name.ToString();
+                info.name = name;
                 info.address = GL.GetAttribLocation(ProgramID, info.name);
                 Attributes.Add(name.ToString(), info);
                 Console.WriteLine(name + " " + info.address);
@@ -92,12 +91,12 @@ namespace WallpaperVisualizer
                 UniformInfo info = new UniformInfo();
                 int length = 0;
 
-                StringBuilder name = new StringBuilder();
+                string name = "";
 
-                GL.GetActiveUniform(ProgramID, i, 256, out length, out info.size, out info.type, name);
+                GL.GetActiveUniform(ProgramID, i, 256, out length, out info.size, out info.type, out name);
 
-                info.name = name.ToString();
-                Uniforms.Add(name.ToString(), info);
+                info.name = name;
+                Uniforms.Add(name, info);
                 info.address = GL.GetUniformLocation(ProgramID, info.name);
                 Console.WriteLine(name + " " + info.address);
             }

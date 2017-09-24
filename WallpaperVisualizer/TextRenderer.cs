@@ -21,6 +21,7 @@ namespace WallpaperVisualizer
         bool disposed;
         public int width { private set; get; }
         public int height { private set; get; }
+        public Size text_size { private set; get; }
 
         #region Constructors
 
@@ -39,6 +40,7 @@ namespace WallpaperVisualizer
                 throw new InvalidOperationException("No GraphicsContext is current on the calling thread.");
             this.width = width;
             this.height = height;
+            text_size = Size.Empty;
 
             bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             gfx = Graphics.FromImage(bmp);
@@ -64,6 +66,7 @@ namespace WallpaperVisualizer
         {
             if (disposed) return;
             gfx.Clear(color);
+            text_size = Size.Empty;
             dirty_region = new Rectangle(0, 0, bmp.Width, bmp.Height);
         }
 
@@ -83,6 +86,7 @@ namespace WallpaperVisualizer
             SizeF size = gfx.MeasureString(text, font);
             dirty_region = Rectangle.Round(RectangleF.Union(dirty_region, new RectangleF(point, size)));
             dirty_region = Rectangle.Intersect(dirty_region, new Rectangle(0, 0, bmp.Width, bmp.Height));
+            text_size = size.ToSize();
         }
 
         /// <summary>

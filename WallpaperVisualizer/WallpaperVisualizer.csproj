@@ -59,6 +59,7 @@
     <Compile Include="ShaderProgram.cs" />
     <Compile Include="Spotify.cs" />
     <Compile Include="Sprite.cs" />
+    <Compile Include="WallpaperSetter.cs" />
     <Compile Include="WallpaperVisualizer.cs" />
     <Compile Include="TextRenderer.cs" />
     <Compile Include="Utils.cs" />
@@ -70,8 +71,9 @@
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="OpenTK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
-      <HintPath>..\packages\OpenTK.2.0.0\lib\net20\OpenTK.dll</HintPath>
+    <Reference Include="OpenTK, Version=3.0.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\OpenTK.2.0.0\OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -91,7 +93,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
     <None Include="color.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

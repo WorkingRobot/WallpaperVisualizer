@@ -13,7 +13,7 @@ namespace WallpaperVisualizer
     class AudioGetter
     {
         private WaveInEvent waveIn;
-        public volatile List<double[]> Data;
+        public List<double[]> Data;
         private int responsiveness;
         private bool running;
         double i__ = 0;
