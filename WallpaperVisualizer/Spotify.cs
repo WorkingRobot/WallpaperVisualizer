@@ -20,6 +20,7 @@ namespace WallpaperVisualizer
         private const string hostname = "http://49664118.spotilocal.com:4380";
         private const string ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36";
         private Timer timer;
+        public Bitmap artwork { get; private set; }
         public Spotify()
         {
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
@@ -66,12 +67,9 @@ namespace WallpaperVisualizer
             else
             {
                 Result result = JsonConvert.DeserializeObject<Result>(output);
-                if (this.result == null)
+                if (this.result == null || result.track.track_resource.uri != this.result.track.track_resource.uri)
                 {
-                    newSong = true;
-                }
-                else if (result.track.track_resource.uri != this.result.track.track_resource.uri)
-                {
+                    artwork = GetArtwork(result.track.track_resource.uri);
                     newSong = true;
                 }
                 this.result = result;
@@ -85,7 +83,16 @@ namespace WallpaperVisualizer
             WebClient client = new WebClient();
             client.Headers.Add("Origin", "https://open.spotify.com");
             client.Headers.Add("User-Agent", ua);
-            ArtworkResponse response = JsonConvert.DeserializeObject<ArtworkResponse>(Encoding.UTF8.GetString(Encoding.Default.GetBytes(client.DownloadString("https://open.spotify.com/oembed?url=" + uri))));
+            ArtworkResponse response;
+            try
+            {
+                response = JsonConvert.DeserializeObject<ArtworkResponse>(Encoding.UTF8.GetString(Encoding.Default.GetBytes(client.DownloadString("https://open.spotify.com/oembed?url=" + uri))));
+            }
+            catch (WebException)
+            {
+                // just in case
+                response = JsonConvert.DeserializeObject<ArtworkResponse>(Encoding.UTF8.GetString(Encoding.Default.GetBytes(client.DownloadString("https://open.spotify.com/oembed?url=" + uri))));
+            }
             return new Bitmap(new MemoryStream(client.DownloadData(response.thumbnail_url)));
         }
 

@@ -13,7 +13,7 @@ namespace WallpaperVisualizer
     internal class WallpaperVisualizer : GameWindow
     {
         public static WallpaperVisualizer MainWindow = null;
-        public RectangleF CurrentView = new RectangleF(0, 0, 800, 600);
+        public RectangleF CurrentView = new RectangleF(0, -37.5f, DisplayDevice.Default.Width, DisplayDevice.Default.Height);
 
         private int ibo_elements;
         private Dictionary<string, int> textures = new Dictionary<string, int>();
@@ -53,10 +53,10 @@ namespace WallpaperVisualizer
         }
 
         public WallpaperVisualizer()
-            : base(DisplayDevice.Default.Width, DisplayDevice.Default.Height, new OpenTK.Graphics.GraphicsMode(new OpenTK.Graphics.ColorFormat(8, 8, 8, 8), 3, 3, 4), "OpenTK Sprite Demo", GameWindowFlags.Fullscreen, DisplayDevice.Default, 3, 0, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible)
+            : base(DisplayDevice.Default.Width, DisplayDevice.Default.Height, new OpenTK.Graphics.GraphicsMode(new OpenTK.Graphics.ColorFormat(8, 8, 8, 8), 3, 3, 4), "OpenTK Sprite Demo", GameWindowFlags.Fullscreen, DisplayDevice.Default, 4, 0, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible)
         {
             WallpaperSetter.SetToWallpaper(WindowInfo.Handle);
-            CurrentView.Size = new SizeF(ClientSize.Width, ClientSize.Height);
+            //CurrentView.Size = new SizeF(ClientSize.Width, ClientSize.Height);
             ortho = Matrix4.CreateOrthographic(ClientSize.Width, ClientSize.Height, 1.0f, 50.0f);
         }
 
@@ -92,15 +92,17 @@ namespace WallpaperVisualizer
             // Enable blending based on the texture alpha
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
-
-            for (short i = 0; i < 500; i++)
+            double barwidth = CurrentView.Width / 498;
+            Console.WriteLine(DisplayDevice.Default.Width + "  " + DisplayDevice.Default.Height);
+            Console.WriteLine(CurrentView.Width + "  " + CurrentView.Height + "  " + CurrentView.Width / 498);
+            for (short i = 2; i < 500; i++)
             {
-                Sprite t = newSprite(i, 0, 1, 0, Sprite.SpriteType.GRAPH, i);
-                t.color = Utils.HsvToRgb(((double)i / 500) * 360, 1, 1);
+                Sprite t = newSprite(Math.Ceiling(i*barwidth)+2, 0, (int)Math.Ceiling(barwidth), 0, Sprite.SpriteType.GRAPH, i);
+                t.color = Utils.HsvToRgb(((double)i / 498) * 255, 1, 1);
                 sprites.Add(t);
                 if (i % 2 == 0)
                 {
-                    sprites.Add(newSprite(i, -32, 2, 32, Sprite.SpriteType.TASKBAR, i));
+                    sprites.Add(newSprite(Math.Ceiling(i*barwidth)+2, -32, 2*(int)Math.Ceiling(barwidth), 32, Sprite.SpriteType.TASKBAR, i));
                 }
             }
             Sprite s1 = new Sprite(fpsRenderer.Texture, fpsRenderer.width, fpsRenderer.height, shader, Sprite.SpriteType.MISC, -1);
@@ -114,11 +116,11 @@ namespace WallpaperVisualizer
             sprites.Add(songArtwork);
             hidden = false;
         }
-        public Sprite newSprite(float x, float y, int width, int height, Sprite.SpriteType type, short name)
+        public Sprite newSprite(double x, double y, int width, int height, Sprite.SpriteType type, short name)
         {
             Sprite ret = new Sprite(1, width, height, colorShader, type, name);
             ret.color = new Vector4(1, 1, 1, 1); // white with 100% opacity
-            ret.Position = new Vector2(x, y);
+            ret.Position = new Vector2((float)x, (float)y);
             return ret;
         }
 
@@ -166,31 +168,29 @@ namespace WallpaperVisualizer
         {
             base.OnResize(e);
             ortho = Matrix4.CreateOrthographic(ClientSize.Width, ClientSize.Height, -1.0f, 2.0f);
-            CurrentView.Size = new SizeF(ClientSize.Width, ClientSize.Height);
+            //CurrentView.Size = new SizeF(ClientSize.Width, ClientSize.Height);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             base.OnUpdateFrame(e);
-            double[] data;
-            lock (audioGetter.Data)
-            {
-                data = Utils.Average(Utils.Zip(audioGetter.Data));
-            }
+            double[] data = Utils.Average(Utils.Zip(audioGetter.Data));
             double volume = speakers.AudioEndpointVolume.MasterVolumeLevelScalar;
+            double scale = CurrentView.Height / 1000 / 0.5;
             foreach (Sprite s in sprites)
             {
                 if (s.Type == Sprite.SpriteType.GRAPH || s.Type == Sprite.SpriteType.TASKBAR)
                 {
                     if (s.Name >= data.Length) continue;
-                    int height = (int)(data[s.Name] * c * volume);
+                    int height = (int)(data[s.Name] * c * volume * scale);
+                    
                     if (s.Type == Sprite.SpriteType.GRAPH && !hidden)
                     {
-                        s.Size = new Size(1, height);
+                        s.Size = new SizeF(s.Size.Width,height);
                     }
                     else if (s.Type==Sprite.SpriteType.TASKBAR)
                     {
-                        s.color = Utils.HsvToRgb(((double)s.Name / data.Length) * 255, Math.Min(1,height/75d), 0.9d);
+                        s.color = Utils.HsvToRgb(((double)s.Name / data.Length) * 255, Math.Min(1,height/(75d*scale)), 0.9d);
                     }
                 }
             }
@@ -278,20 +278,17 @@ namespace WallpaperVisualizer
             {
                 fpsRenderer.Clear(Color.Transparent);
                 double fps = Math.Min(60,Math.Round((UpdateFrequency + RenderFrequency) / 2, 1));
-                fpsRenderer.DrawString(fps.ToString(), new Font(FontFamily.GenericSansSerif, 11*5),fps>45 ? Brushes.White : Brushes.Red,PointF.Empty);
+                fpsRenderer.DrawString(fps.ToString(), new Font(FontFamily.GenericSansSerif, 11*5),fps>25 ? Brushes.White : Brushes.Red,PointF.Empty);
                 if (spotify.newSong)
                 {
                     spotifyRenderer.Clear(Color.Transparent);
                     spotifyRenderer.DrawString(String.Format("{0}\n{1}\n{2}", Utils.Trim(spotify.result.track.track_resource.name, trimpoint), Utils.Trim(spotify.result.track.artist_resource.name, trimpoint), Utils.Trim(spotify.result.track.album_resource.name, trimpoint)), new Font(FontFamily.GenericSansSerif, 11), Brushes.White, PointF.Empty);
-                    
-                    loadImage(spotify.GetArtwork(spotify.result.track.track_resource.uri), songArtwork.TextureID);
+                    loadImage(spotify.artwork, songArtwork.TextureID);
 
-                    // 500 is the width, 300 is the height at which the objects are centered at, 25 is the space between the 2 objects.
-                    int x = (int)((500 - (spotifyRenderer.text_size.Width + songArtwork.Size.Width + 25)) / 2);
-                    songArtwork.Position = new Vector2(x, 300 - songArtwork.Size.Height / 2);
-                    spotifyText.Position = new Vector2(500 - x - spotifyRenderer.text_size.Width, 300 - spotifyRenderer.text_size.Height / 2);
-                    Console.WriteLine(spotifyText.Position);
-                    Console.WriteLine(songArtwork.Position);
+                    // 25 is the space between the 2 objects.
+                    int x = (int)((CurrentView.Width - (spotifyRenderer.text_size.Width + songArtwork.Size.Width + 25)) / 2);
+                    songArtwork.Position = new Vector2(x, (CurrentView.Height/2) - songArtwork.Size.Height / 2);
+                    spotifyText.Position = new Vector2(CurrentView.Width - x - spotifyRenderer.text_size.Width, (CurrentView.Height / 2) - spotifyRenderer.text_size.Height / 2);
                     spotify.newSong = false;
                 }
                 doNothing(spotifyRenderer.Texture);

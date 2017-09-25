@@ -58,7 +58,7 @@ namespace WallpaperVisualizer
             for (int i = 0; i < data.Length; ++i)
             {
                 //Looks better in my preference
-                data[i] *= FastFourierTransform.HammingWindow(i, data.Length/2);
+                data[i] *= FastFourierTransform.HammingWindow(i, data.Length);
             }
             Data.Add(data);
             if (Data.Count > responsiveness)

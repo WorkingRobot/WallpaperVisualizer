@@ -122,9 +122,17 @@ namespace WallpaperVisualizer
         public static double[][] Zip(List<double[]> inp)
         {
             List<double[]> input;
-            lock (inp)
+            try
             {
                 input = new List<double[]>(inp);
+            }
+            catch (ArgumentException)
+            {
+                input = new List<double[]>();
+                for (int i = 0; i < inp.Count;++i)
+                {
+                    input.Add(inp[i]);
+                }
             }
             double[][] ret = new double[input[0].Length][];
             for(int i = 0; i < ret.Length; ++i)
