@@ -1,11 +1,8 @@
-﻿using NAudio.CoreAudioApi;
-using NAudio.Dsp;
+﻿using NAudio.Dsp;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace WallpaperVisualizer
 {
@@ -53,7 +50,7 @@ namespace WallpaperVisualizer
                 data[i] = e.Buffer[i] * FastFourierTransform.HannWindow(i, e.Buffer.Length);
             }
             data = FFT.fft(data);
-            data = data.Take((int)(e.Buffer.Length / 1.764)).ToArray();
+            data = data.Take((int)(e.Buffer.Length / 1.5)).ToArray();
             data = CalcUtil.Smooth(CalcUtil.Smooth(data, WallpaperVisualizer.MainWindow.a), WallpaperVisualizer.MainWindow.b);
             for (int i = 0; i < data.Length; ++i)
             {

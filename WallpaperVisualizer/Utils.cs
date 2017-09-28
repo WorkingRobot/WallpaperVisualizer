@@ -121,6 +121,7 @@ namespace WallpaperVisualizer
 
         public static double[][] Zip(List<double[]> inp)
         {
+            if (inp.Count < 1) { return new double[0][]; }
             List<double[]> input;
             try
             {

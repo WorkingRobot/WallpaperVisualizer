@@ -7,6 +7,7 @@ using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using NAudio.CoreAudioApi;
+using System.Threading;
 
 namespace WallpaperVisualizer
 {
@@ -34,6 +35,7 @@ namespace WallpaperVisualizer
 
         static AudioGetter audioGetter;
         static Spotify spotify;
+        static TransparentTaskbar tb;
 
         public int a = 5;
         public int b = 2;
@@ -43,13 +45,20 @@ namespace WallpaperVisualizer
         [STAThread]
         public static void Main()
         {
+            tb = new TransparentTaskbar();
+            audioGetter = new AudioGetter(44100, 15);
+            spotify = new Spotify();
+            // A bit messy, but just in case. Added in case the desktop switches in some manner in Windows 10's task view
+            // and it resets the taskbar attributes. This also happens when opening the start menu.
+            Timer TBTimer = new Timer(tb.SetToTransparent, null, 100, 10);
             using (WallpaperVisualizer window = new WallpaperVisualizer())
             {
-                audioGetter = new AudioGetter(44100, 10);
-                spotify = new Spotify();
+                tb.SetToTransparent();
                 MainWindow = window;
                 window.Run(60.0, 60.0);
             }
+            TBTimer.Dispose();
+            tb.SetToDefault();
         }
 
         public WallpaperVisualizer()
@@ -190,7 +199,7 @@ namespace WallpaperVisualizer
                     }
                     else if (s.Type==Sprite.SpriteType.TASKBAR)
                     {
-                        s.color = Utils.HsvToRgb(((double)s.Name / data.Length) * 255, Math.Min(1,height/(75d*scale)), 0.9d);
+                        s.color = Utils.HsvToRgb(((double)s.Name / data.Length) * 255, Math.Min(1,height/(60d*scale)), 0.9d);
                     }
                 }
             }
