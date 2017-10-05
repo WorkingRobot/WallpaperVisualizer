@@ -12,5 +12,5 @@ All you have to do is download the executable and run it. It will create a JSON 
 | ~~Add Spotify support~~ | ![Progress](http://progressed.io/bar/100) |
 | ~~Set window to wallpaper~~ | ![Progress](http://progressed.io/bar/100) |
 | ~~Add taskbar colors~~ | ![Progress](http://progressed.io/bar/100) |
-| Disable main graph when a window is maximized or fullscreened | ![Progress](http://progressed.io/bar/25) |
-| Add configuration | ![Progress](http://progressed.io/bar/0) |
+| ~~Disable main graph when a window is maximized or fullscreened~~ | ![Progress](http://progressed.io/bar/100) |
+| ~~Add configuration~~ | ![Progress](http://progressed.io/bar/100) |
