@@ -3,12 +3,80 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 
 namespace WallpaperVisualizer
 {
     sealed class Utils
     {
+        public sealed class Shaders
+        {
+            public static Dictionary<string, string> shaders = new Dictionary<string, string>();
+            static Shaders()
+            {
+                shaders.Add("color.frag", @"
+#version 330
+
+in vec2 f_texcoord;
+in vec4 color;
+out vec4 outputColor;
+
+uniform sampler2D mytexture;
+ 
+void main(void) {
+	outputColor = color;
+}");
+                shaders.Add("color.vert", @"
+#version 330
+
+in vec2 v_coord;
+in vec2 v_texcoord;
+
+out vec2 f_texcoord;
+out vec4 color;
+
+uniform mat4 mvp;
+uniform vec4 _color;
+ 
+void main() {
+	gl_Position = mvp * vec4(v_coord,1.0,1.0);
+	f_texcoord = v_texcoord;
+	color = _color;
+}");
+                shaders.Add("sprite.frag", @"
+#version 330
+
+in vec2 f_texcoord;
+out vec4 outputColor;
+
+uniform sampler2D mytexture;
+ 
+void main(void) {
+	outputColor = texture2D(mytexture, f_texcoord);
+}
+");
+                shaders.Add("sprite.vert", @"
+#version 330
+
+in vec2 v_coord;
+in vec2 v_texcoord;
+
+out vec2 f_texcoord;
+
+uniform mat4 mvp;
+uniform vec4 _color;
+ 
+void main() {
+	gl_Position = mvp * vec4(v_coord,1.0,1.0);
+	f_texcoord = v_texcoord;
+}
+");
+            }
+        }
+
+
         /// <summary>
         /// Convert HSV to RGB
         /// h is from 0-360
@@ -142,7 +210,7 @@ namespace WallpaperVisualizer
                 for (int j = 0; j < input.Count; ++j)
                 {
                     if (input[j] == null) continue;
-                    ret[i][j] = input[j][i];
+                    ret[i][j] = input[j][i]*Config.config.display.weight[j];
                 }
             }
             return ret;
@@ -160,6 +228,146 @@ namespace WallpaperVisualizer
                 return input.Substring(0, length) + "...";
             }
             return input;
+        }
+
+        public static FontFamily GetFontFamily(string fontname)
+        {
+            FontFamily[] families = FontFamily.Families;
+            foreach (FontFamily family in families)
+            {
+                if (family.Name == fontname)
+                {
+                    return family;
+                }
+            }
+            return FontFamily.GenericSansSerif;
+        }
+
+        public static Vector2[] GetCircleVerts(int verts)
+        {
+            Vector2[] output = new Vector2[verts+1];
+            output[0] = Vector2.Zero;
+            double angle = (Math.PI * 2) / verts;
+            for (int i = 0; i < verts; ++i)
+            {
+                output[i+1] = new Vector2((float)Math.Cos(i * angle), (float)Math.Sin(i * angle));
+            }
+            return output;
+        }
+
+        public static int[] GetCircleTriangles(int verts, int offset = 0)
+        {
+            int[] output = new int[verts * 3];
+            for (int i = 0; i < verts; ++i)
+            {
+                output[i * 3] = 0 + offset;
+                output[i * 3 + 1] = i + 1 + offset;
+                output[i * 3 + 2] = verts >= i+2 ? i+2 + offset : 1 + offset;
+            }
+            return output;
+        }
+
+        public static int GetTaskbarHeight()
+        {
+            return Screen.PrimaryScreen.Bounds.Height-Screen.PrimaryScreen.WorkingArea.Height;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+        [Serializable]
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WINDOWPLACEMENT
+        {
+            public int length;
+            public int flags;
+            public ShowWindowCommands showCmd;
+            public Point ptMinPosition;
+            public Point ptMaxPosition;
+            public Rectangle rcNormalPosition;
+        }
+
+        private enum ShowWindowCommands : int
+        {
+            Hide = 0,
+            Normal = 1,
+            Minimized = 2,
+            Maximized = 3,
+        }
+
+        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetShellWindow();
+        [DllImport("user32.dll")]
+        private static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
+        [DllImport("user32.dll")]
+        private static extern int GetClassName(IntPtr hWnd, StringBuilder buf, int nMaxCount);
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")]
+        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+
+        public enum DesktopWindow
+        {
+            ProgMan,
+            SHELLDLL_DefViewParent,
+            SHELLDLL_DefView,
+            SysListView32
+        }
+
+        public static IntPtr GetDesktopWindow(DesktopWindow desktopWindow)
+        {
+            IntPtr _SHELLDLL_DefViewParent = GetShellWindow();
+            IntPtr _SHELLDLL_DefView = FindWindowEx(_SHELLDLL_DefViewParent, IntPtr.Zero, "SHELLDLL_DefView", null);
+            if (_SHELLDLL_DefView == IntPtr.Zero)
+            {
+                EnumWindows((hwnd, lParam) =>
+                {
+                    const int maxChars = 256;
+                    StringBuilder cn = new StringBuilder(maxChars);
+                    string className = "";
+                    if (GetClassName(hwnd, cn, maxChars) > 0)
+                    {
+                        className = cn.ToString();
+                    }
+                    if (className == "WorkerW")
+                    {
+                        IntPtr child = FindWindowEx(hwnd, IntPtr.Zero, "SHELLDLL_DefView", null);
+                        if (child != IntPtr.Zero)
+                        {
+                            _SHELLDLL_DefViewParent = hwnd;
+                            return false;
+                        }
+                    }
+                    return true;
+                }, IntPtr.Zero);
+            }
+            return _SHELLDLL_DefViewParent;
+        }
+
+        public static bool IsDesktopCovered()
+        {
+            IntPtr fgwindow = GetForegroundWindow();
+            const int maxChars = 256;
+            StringBuilder cn = new StringBuilder(maxChars);
+            string className = "";
+            if (GetClassName(fgwindow, cn, maxChars) > 0)
+            {
+                className = cn.ToString();
+            }
+            if (fgwindow == GetShellWindow() || fgwindow == FindWindow("Shell_TrayWnd", null) || fgwindow == WallpaperSetter.workerw || className == "WorkerW")
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

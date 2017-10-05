@@ -5,6 +5,7 @@ namespace WallpaperVisualizer
 {
     class WallpaperSetter
     {
+        public static IntPtr workerw;
         public static void SetToWallpaper(IntPtr windowToPin)
         {
             // Fetch the Progman window
@@ -46,7 +47,7 @@ namespace WallpaperVisualizer
 
                 return true;
             }), IntPtr.Zero);
-
+            WallpaperSetter.workerw = workerw;
             W32.SetParent(windowToPin, workerw);
             
         }

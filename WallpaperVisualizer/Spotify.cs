@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Net;
@@ -9,8 +10,9 @@ namespace WallpaperVisualizer
 {
     class Spotify
     {
-        public Result result;
+        public Result result = new Result();
         public bool on;
+        public bool _on = true;
         public bool newSong;
         private string oAuthToken;
         private string csrfToken;
@@ -64,7 +66,7 @@ namespace WallpaperVisualizer
             else
             {
                 Result result = JsonConvert.DeserializeObject<Result>(output);
-                if (this.result == null || result.track.track_resource.uri != this.result.track.track_resource.uri)
+                if (!on || this.result == null || result.track.track_resource.uri != this.result.track.track_resource.uri)
                 {
                     artwork = GetArtwork(result.track.track_resource.uri);
                     newSong = true;
@@ -72,7 +74,6 @@ namespace WallpaperVisualizer
                 this.result = result;
                 on = true;
             }
-
         }
 
         public Bitmap GetArtwork(string uri)
@@ -85,10 +86,21 @@ namespace WallpaperVisualizer
             {
                 response = JsonConvert.DeserializeObject<ArtworkResponse>(Encoding.UTF8.GetString(Encoding.Default.GetBytes(client.DownloadString("https://open.spotify.com/oembed?url=" + uri))));
             }
-            catch (WebException)
+            catch (WebException e)
             {
-                // just in case
-                response = JsonConvert.DeserializeObject<ArtworkResponse>(Encoding.UTF8.GetString(Encoding.Default.GetBytes(client.DownloadString("https://open.spotify.com/oembed?url=" + uri))));
+                HttpWebResponse errorResponse = e.Response as HttpWebResponse;
+                if (errorResponse.StatusCode == HttpStatusCode.NotFound)
+                {
+                    on = false;
+                    var b = new Bitmap(1, 1);
+                    b.SetPixel(0, 0, Color.White);
+                    return new Bitmap(b, Config.config.spotify.artsize, Config.config.spotify.artsize);
+                }
+                else
+                {
+                    // just in case
+                    response = JsonConvert.DeserializeObject<ArtworkResponse>(Encoding.UTF8.GetString(Encoding.Default.GetBytes(client.DownloadString("https://open.spotify.com/oembed?url=" + uri))));
+                }
             }
             return new Bitmap(new MemoryStream(client.DownloadData(response.thumbnail_url)));
         }
@@ -132,7 +144,7 @@ namespace WallpaperVisualizer
             public bool running;
             public string client_version;
             public bool online;
-            double playing_position;
+            public double playing_position;
             public bool playing;
             public Error error;
             public class Track
@@ -163,6 +175,12 @@ namespace WallpaperVisualizer
             {
                 public string type;
                 public string message;
+            }
+
+            public Result()
+            {
+                track = new Track();
+                track.track_resource = new Track.Resource();
             }
         }
         #pragma warning restore 649

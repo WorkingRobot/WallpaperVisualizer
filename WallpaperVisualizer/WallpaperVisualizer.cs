@@ -14,45 +14,46 @@ namespace WallpaperVisualizer
     internal class WallpaperVisualizer : GameWindow
     {
         public static WallpaperVisualizer MainWindow = null;
-        public RectangleF CurrentView = new RectangleF(0, -37.5f, DisplayDevice.Default.Width, DisplayDevice.Default.Height);
+        public RectangleF CurrentView = new RectangleF(0, -Utils.GetTaskbarHeight()-25, DisplayDevice.Default.Width, DisplayDevice.Default.Height);
 
         private int ibo_elements;
-        private Dictionary<string, int> textures = new Dictionary<string, int>();
-        private List<Sprite> sprites = new List<Sprite>();
+        public static List<Sprite> sprites = new List<Sprite>();
         private Sprite songArtwork;
         private Sprite spotifyText;
         private Matrix4 ortho;
         private bool updated = false;
         private Random r = new Random();
 
-        TextRenderer fpsRenderer;
+        //TextRenderer fpsRenderer;
         TextRenderer spotifyRenderer;
-        ShaderProgram shader;
-        ShaderProgram colorShader;
+        ProgressBar progressBar;
+        public static ShaderProgram shader { get; private set; }
+        public static ShaderProgram colorShader { get; private set; }
         MMDevice speakers;
-        private int counter;
+        public int counter;
         private bool hidden;
 
         static AudioGetter audioGetter;
-        static Spotify spotify;
+        public static Spotify spotify { get; private set; }
         static TransparentTaskbar tb;
 
         public int a = 5;
         public int b = 2;
         public int c = 363;
-        private const int trimpoint = 50;
 
         [STAThread]
         public static void Main()
         {
+            new Config("config.json");
             tb = new TransparentTaskbar();
-            audioGetter = new AudioGetter(44100, 15);
+            audioGetter = new AudioGetter(44100, Config.config.display.responsiveness);// 15
             spotify = new Spotify();
             // A bit messy, but just in case. Added in case the desktop switches in some manner in Windows 10's task view
             // and it resets the taskbar attributes. This also happens when opening the start menu.
             Timer TBTimer = new Timer(tb.SetToTransparent, null, 100, 10);
             using (WallpaperVisualizer window = new WallpaperVisualizer())
             {
+                
                 tb.SetToTransparent();
                 MainWindow = window;
                 window.Run(60.0, 60.0);
@@ -65,8 +66,9 @@ namespace WallpaperVisualizer
             : base(DisplayDevice.Default.Width, DisplayDevice.Default.Height, new OpenTK.Graphics.GraphicsMode(new OpenTK.Graphics.ColorFormat(8, 8, 8, 8), 3, 3, 4), "OpenTK Sprite Demo", GameWindowFlags.Fullscreen, DisplayDevice.Default, 4, 0, OpenTK.Graphics.GraphicsContextFlags.ForwardCompatible)
         {
             WallpaperSetter.SetToWallpaper(WindowInfo.Handle);
-            //CurrentView.Size = new SizeF(ClientSize.Width, ClientSize.Height);
-            ortho = Matrix4.CreateOrthographic(ClientSize.Width, ClientSize.Height, 1.0f, 50.0f);
+
+            CurrentView.Size = new SizeF(DisplayDevice.Default.Width, DisplayDevice.Default.Height);
+            ortho = Matrix4.CreateOrthographic(CurrentView.Width, CurrentView.Height, -1.0f, 2.0f);
         }
 
         protected override void OnLoad(EventArgs e)
@@ -79,21 +81,14 @@ namespace WallpaperVisualizer
                 if (!speakers.FriendlyName.Contains("Speakers") && device.FriendlyName.Contains("Speakers")) speakers = device;
                 if (device.FriendlyName.Contains("Speakers") && !speakers.FriendlyName.Contains("Realtek")) speakers = device;
             }
-            //Console.WriteLine(new MMDeviceEnumerator().GetDevice(audioGetter.waveIn.DeviceNumber.ToString()).AudioEndpointVolume.MasterVolumeLevelScalar);
-            fpsRenderer = new TextRenderer(40 * 5, 15 * 5);
-            spotifyRenderer = new TextRenderer(400, 50);
+            //fpsRenderer = new TextRenderer(40 * 5, 15 * 5);
+            spotifyRenderer = new TextRenderer(40*Config.config.spotify.textsize, 5*Config.config.spotify.textsize);
             audioGetter.Start();
-            GL.ClearColor(Color.CornflowerBlue);
-            GL.Viewport(0, 0, Width, Height);
-
-            // Load textures from files
-            textures.Add("opentksquare", loadImage("opentksquare.png"));
-            textures.Add("opentksquare2", loadImage("opentksquare2.png"));
-            textures.Add("opentksquare3", loadImage("opentksquare3.png"));
-
+            GL.ClearColor(Config.config.colors.bg.ToColor());
+            GL.Viewport(0, 0, (int)CurrentView.Width, (int)CurrentView.Height);
             // Load shader
-            shader = new ShaderProgram("sprite.vert", "sprite.frag", true);
-            colorShader = new ShaderProgram("color.vert", "color.frag", true);
+            shader = new ShaderProgram(Utils.Shaders.shaders["sprite.vert"], Utils.Shaders.shaders["sprite.frag"]);
+            colorShader = new ShaderProgram(Utils.Shaders.shaders["color.vert"], Utils.Shaders.shaders["color.frag"]);
             GL.UseProgram(shader.ProgramID);
 
             GL.GenBuffers(1, out ibo_elements);
@@ -101,33 +96,29 @@ namespace WallpaperVisualizer
             // Enable blending based on the texture alpha
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
-            double barwidth = CurrentView.Width / 498;
-            Console.WriteLine(DisplayDevice.Default.Width + "  " + DisplayDevice.Default.Height);
-            Console.WriteLine(CurrentView.Width + "  " + CurrentView.Height + "  " + CurrentView.Width / 498);
-            for (short i = 2; i < 500; i++)
+            double barwidth = CurrentView.Width / 500d;
+            //Sprite s1 = new Sprite(fpsRenderer.Texture, fpsRenderer.width, fpsRenderer.height, shader, Sprite.SpriteType.MISC, -1);
+            //s1.Position = new Vector2(500, 500);
+            spotifyText = new Sprite(spotifyRenderer.Texture, spotifyRenderer.width, spotifyRenderer.height, shader, Sprite.SpriteType.SPOTIFY, 0);
+            spotifyText.Position = new Vector2(0, 0);
+            songArtwork = new Sprite(GL.GenTexture(), Config.config.spotify.artsize, Config.config.spotify.artsize, shader, Sprite.SpriteType.SPOTIFY, 1);
+            songArtwork.Position = new Vector2(200, 200);
+            progressBar = new ProgressBar((int)((CurrentView.Width-Config.config.spotify.progressw)/2), Config.config.spotify.progressy, Config.config.spotify.progressw, Config.config.spotify.progressh);
+            for (short i = 0; i < 500; i++)
             {
-                Sprite t = newSprite(Math.Ceiling(i*barwidth)+2, 0, (int)Math.Ceiling(barwidth), 0, Sprite.SpriteType.GRAPH, i);
-                t.color = Utils.HsvToRgb(((double)i / 498) * 255, 1, 1);
+                Sprite t = newSprite(Math.Ceiling(i * barwidth), 0, (int)Math.Ceiling(barwidth), 0, Sprite.SpriteType.GRAPH, i);
+                t.color = Utils.HsvToRgb((i / 500d) * 360, 1, 1);
                 sprites.Add(t);
                 if (i % 2 == 0)
                 {
-                    sprites.Add(newSprite(Math.Ceiling(i*barwidth)+2, -32, 2*(int)Math.Ceiling(barwidth), 32, Sprite.SpriteType.TASKBAR, i));
+                    newSprite(Math.Ceiling(i * barwidth), -Utils.GetTaskbarHeight(), 2 * (int)Math.Ceiling(barwidth), Utils.GetTaskbarHeight(), Sprite.SpriteType.TASKBAR, i);
                 }
             }
-            Sprite s1 = new Sprite(fpsRenderer.Texture, fpsRenderer.width, fpsRenderer.height, shader, Sprite.SpriteType.MISC, -1);
-            s1.Position = new Vector2(500, 500);
-            spotifyText = new Sprite(spotifyRenderer.Texture, spotifyRenderer.width, spotifyRenderer.height, shader, Sprite.SpriteType.SPOTIFY, 0);
-            spotifyText.Position = new Vector2(0, 0);
-            songArtwork = new Sprite(GL.GenTexture(), 128, 128, shader, Sprite.SpriteType.SPOTIFY, 1);
-            songArtwork.Position = new Vector2(200, 200);
-            sprites.Add(s1);
-            sprites.Add(spotifyText);
-            sprites.Add(songArtwork);
             hidden = false;
         }
         public Sprite newSprite(double x, double y, int width, int height, Sprite.SpriteType type, short name)
         {
-            Sprite ret = new Sprite(1, width, height, colorShader, type, name);
+            Sprite ret = new Sprite(0, width, height, colorShader, type, name);
             ret.color = new Vector4(1, 1, 1, 1); // white with 100% opacity
             ret.Position = new Vector2((float)x, (float)y);
             return ret;
@@ -161,31 +152,29 @@ namespace WallpaperVisualizer
                         GL.UniformMatrix4(s.Shader.GetUniform("mvp"), false, ref s.ModelViewProjectionMatrix);
                         GL.Uniform4(s.Shader.GetUniform("_color"), ref s.color);
                         GL.Uniform1(shader.GetAttribute("mytexture"), s.TextureID);
-                        GL.DrawElements(BeginMode.Triangles, 6, DrawElementsType.UnsignedInt, offset * sizeof(uint));
-                        offset += 6;
+                        GL.DrawElements(BeginMode.Triangles, s.IndiceCount, DrawElementsType.UnsignedInt, offset * sizeof(uint));
+                        offset += s.IndiceCount;
                     }
                 }
-
                 shader.DisableVertexAttribArrays();
-
                 GL.Flush();
                 SwapBuffers();
             }
         }
 
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-            ortho = Matrix4.CreateOrthographic(ClientSize.Width, ClientSize.Height, -1.0f, 2.0f);
-            //CurrentView.Size = new SizeF(ClientSize.Width, ClientSize.Height);
-        }
+        //protected override void OnResize(EventArgs e)
+        //{
+        //    base.OnResize(e);
+        //    ortho = Matrix4.CreateOrthographic(ClientSize.Width, ClientSize.Height, -1.0f, 2.0f);
+        //    //CurrentView.Size = new SizeF(ClientSize.Width, ClientSize.Height);
+        //}
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             base.OnUpdateFrame(e);
             double[] data = Utils.Average(Utils.Zip(audioGetter.Data));
             double volume = speakers.AudioEndpointVolume.MasterVolumeLevelScalar;
-            double scale = CurrentView.Height / 1000 / 0.5;
+            double scale = CurrentView.Height / 1000 / 0.5 * Config.config.display.barmultiplier;
             foreach (Sprite s in sprites)
             {
                 if (s.Type == Sprite.SpriteType.GRAPH || s.Type == Sprite.SpriteType.TASKBAR)
@@ -199,43 +188,20 @@ namespace WallpaperVisualizer
                     }
                     else if (s.Type==Sprite.SpriteType.TASKBAR)
                     {
-                        s.color = Utils.HsvToRgb(((double)s.Name / data.Length) * 255, Math.Min(1,height/(60d*scale)), 0.9d);
+                        s.color = Utils.HsvToRgb((double)s.Name / data.Length * 360, Math.Min(1,height/(Config.config.display.tbthreshold*scale)), Config.config.colors.taskbar);
                     }
                 }
             }
-            KeyboardState keyboardState = OpenTK.Input.Keyboard.GetState();
+            KeyboardState keyboardState = Keyboard.GetState();
 
             // Quit if requested
-            if (keyboardState[Key.Escape])
+            if (keyboardState[Key.Escape] && !hidden)
             {
                 audioGetter.Stop();
-                fpsRenderer.Dispose();
+                //fpsRenderer.Dispose();
                 spotifyRenderer.Dispose();
                 Exit();
-            }
-
-            // Move view based on key input
-            float moveSpeed = 200.0f * ((keyboardState[Key.ShiftLeft] || keyboardState[Key.ShiftRight]) ? 3.0f : 1.0f); // Hold shift to move 3 times faster!
-
-            // Up-down movement
-            if (keyboardState[Key.Up])
-            {
-                CurrentView.Y += moveSpeed * (float) e.Time;
-            }
-            else if (keyboardState[Key.Down])
-            {
-                CurrentView.Y -= moveSpeed * (float) e.Time;
-            }
-
-
-            // Left-right movement
-            if (keyboardState[Key.Left])
-            {
-                CurrentView.X -= moveSpeed * (float) e.Time;
-            }
-            else if (keyboardState[Key.Right])
-            {
-                CurrentView.X += moveSpeed * (float) e.Time;
+                return;
             }
             
             // Update graphics
@@ -255,7 +221,7 @@ namespace WallpaperVisualizer
                     verts.AddRange(s.GetVertices());
                     texcoords.AddRange(s.GetTexCoords());
                     inds.AddRange(s.GetIndices(vertcount));
-                    vertcount += 4;
+                    vertcount += s.VertCount;
 
                     s.CalculateModelMatrix();
                     s.ModelViewProjectionMatrix = s.ModelMatrix * ortho;
@@ -283,25 +249,46 @@ namespace WallpaperVisualizer
             updated = true;
 
             counter++;
-            if (counter % 40 == 0)
+            if (counter % 20 == 0)
             {
-                fpsRenderer.Clear(Color.Transparent);
-                double fps = Math.Min(60,Math.Round((UpdateFrequency + RenderFrequency) / 2, 1));
-                fpsRenderer.DrawString(fps.ToString(), new Font(FontFamily.GenericSansSerif, 11*5),fps>25 ? Brushes.White : Brushes.Red,PointF.Empty);
-                if (spotify.newSong)
+                if (!hidden)
                 {
-                    spotifyRenderer.Clear(Color.Transparent);
-                    spotifyRenderer.DrawString(String.Format("{0}\n{1}\n{2}", Utils.Trim(spotify.result.track.track_resource.name, trimpoint), Utils.Trim(spotify.result.track.artist_resource.name, trimpoint), Utils.Trim(spotify.result.track.album_resource.name, trimpoint)), new Font(FontFamily.GenericSansSerif, 11), Brushes.White, PointF.Empty);
-                    loadImage(spotify.artwork, songArtwork.TextureID);
+                    //fpsRenderer.Clear(Color.Transparent);
+                    //double fps = Math.Min(60, Math.Round((UpdateFrequency + RenderFrequency) / 2, 1));
+                    //fpsRenderer.DrawString(fps.ToString(), new Font(FontFamily.GenericSansSerif, 11 * 5), fps > 30 ? Brushes.White : Brushes.Red, PointF.Empty);
+                    if (spotify.on && !spotify._on)
+                    {
+                        sprites.Add(spotifyText);
+                        sprites.Add(songArtwork);
+                        progressBar.Show();
+                    }
+                    if (spotify.on && spotify.newSong)
+                    {
+                        spotify._on = true;
+                        spotifyRenderer.Clear(Color.Transparent);
+                        spotifyRenderer.DrawString(String.Format("{0}\n{1}\n{2}", Utils.Trim(spotify.result.track.track_resource.name, Config.config.spotify.trim), Utils.Trim(spotify.result.track.artist_resource.name, Config.config.spotify.trim), Utils.Trim(spotify.result.track.album_resource.name, Config.config.spotify.trim)), new Font(Utils.GetFontFamily(Config.config.spotify.textfont), Config.config.spotify.textsize), new SolidBrush(Config.config.colors.text.ToColor()), PointF.Empty);
+                        loadImage(spotify.artwork, songArtwork.TextureID);
 
-                    // 25 is the space between the 2 objects.
-                    int x = (int)((CurrentView.Width - (spotifyRenderer.text_size.Width + songArtwork.Size.Width + 25)) / 2);
-                    songArtwork.Position = new Vector2(x, (CurrentView.Height/2) - songArtwork.Size.Height / 2);
-                    spotifyText.Position = new Vector2(CurrentView.Width - x - spotifyRenderer.text_size.Width, (CurrentView.Height / 2) - spotifyRenderer.text_size.Height / 2);
-                    spotify.newSong = false;
+                        // 25 is the space between the 2 objects.
+                        int x = (int)((CurrentView.Width - (spotifyRenderer.text_size.Width + songArtwork.Size.Width + Config.config.spotify.artsongspace)) / 2);
+                        songArtwork.Position = new Vector2(x, (CurrentView.Height / 2) - songArtwork.Size.Height / 2);
+                        spotifyText.Position = new Vector2(CurrentView.Width - x - spotifyRenderer.text_size.Width, (CurrentView.Height / 2) - spotifyRenderer.text_size.Height / 2);
+                        spotify.newSong = false;
+                    }
+                    else if (spotify._on && !spotify.on)
+                    {
+                        spotify._on = false;
+                        spotifyText.Position = new Vector2(-500, -500);
+                        songArtwork.Position = new Vector2(-500, -500);
+                        sprites.Remove(spotifyText);
+                        sprites.Remove(songArtwork);
+                        progressBar.Hide();
+                    }
+                    progressBar.Update();
+                    doNothing(spotifyRenderer.Texture);
+                    //doNothing(fpsRenderer.Texture);
                 }
-                doNothing(spotifyRenderer.Texture);
-                doNothing(fpsRenderer.Texture);
+                hidden = Utils.IsDesktopCovered();
             }
         }
         private void doNothing(Object o) { return; }
@@ -375,23 +362,6 @@ namespace WallpaperVisualizer
                     }
                 }
             }
-
-            // Change the texture on the clicked Sprite
-            if (clickedSprite != null)
-            {
-                if (clickedSprite.TextureID == textures["opentksquare"])
-                {
-                    clickedSprite.TextureID = textures["opentksquare2"];
-                }
-                else if (clickedSprite.TextureID == textures["opentksquare2"])
-                {
-                    clickedSprite.TextureID = textures["opentksquare3"];
-                }
-                else
-                {
-                    clickedSprite.TextureID = textures["opentksquare"];
-                }
-            }
         }
 
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
@@ -420,7 +390,7 @@ namespace WallpaperVisualizer
             {
                 c--;
             }
-            Console.WriteLine("A: " + a + " B: " + b + " C: " + c);
+            //Console.WriteLine("A: " + a + " B: " + b + " C: " + c);
         }
     }
 }

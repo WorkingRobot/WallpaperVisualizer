@@ -1,0 +1,13 @@
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\opentksquare3.png
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\opentksquare.png
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\opentksquare2.png
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\color.frag
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\color.vert
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\sprite.frag
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\sprite.vert
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\WallpaperVisualizer.exe.config
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\WallpaperVisualizer.exe
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\WallpaperVisualizer.pdb
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\x86\Release\WallpaperVisualizer.csproj.CoreCompileInputs.cache
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\x86\Release\WallpaperVisualizer.exe
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\x86\Release\WallpaperVisualizer.pdb

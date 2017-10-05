@@ -62,6 +62,9 @@ namespace WallpaperVisualizer
 
         private float maxDist = 1.0f;
 
+        public virtual int IndiceCount { get { return 6; } }
+        public virtual int VertCount { get { return 4; } }
+
         /// <summary>
         /// Gets or sets the size of this Sprite in pixels
         /// </summary>
@@ -101,13 +104,14 @@ namespace WallpaperVisualizer
             Shader = shader;
             Type = type;
             Name = name;
+            WallpaperVisualizer.sprites.Add(this);
         }
 
         /// <summary>
         /// Gets an array of vertices for the quad of this Sprite
         /// </summary>
         /// <returns></returns>
-        public Vector2[] GetVertices()
+        public virtual Vector2[] GetVertices()
         {
             if (anchor)
             {
@@ -134,7 +138,7 @@ namespace WallpaperVisualizer
         /// Gets the texture coordinates for each vertice in the Sprite
         /// </summary>
         /// <returns></returns>
-        public Vector2[] GetTexCoords()
+        public virtual Vector2[] GetTexCoords()
         {
             return new Vector2[] {
                 new Vector2(TexRect.Left, TexRect.Bottom),
@@ -149,7 +153,7 @@ namespace WallpaperVisualizer
         /// </summary>
         /// <param name="offset">Value to offset the indice values by (number of verts before this Sprite)</param>
         /// <returns>Array of indices to draw</returns>
-        public int[] GetIndices(int offset = 0)
+        public virtual int[] GetIndices(int offset = 0)
         {
             return new int[] { 0+offset, 1+offset, 2+offset, 0+offset, 2+offset, 3+offset };
         }

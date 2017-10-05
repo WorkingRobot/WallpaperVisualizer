@@ -51,7 +51,7 @@ namespace WallpaperVisualizer
             }
             data = FFT.fft(data);
             data = data.Take((int)(e.Buffer.Length / 1.5)).ToArray();
-            data = CalcUtil.Smooth(CalcUtil.Smooth(data, WallpaperVisualizer.MainWindow.a), WallpaperVisualizer.MainWindow.b);
+            data = CalcUtil.Smooth(CalcUtil.Smooth(data, Config.config.display.smoothing[0]), Config.config.display.smoothing[1]);//5, 2
             for (int i = 0; i < data.Length; ++i)
             {
                 //Looks better in my preference
@@ -116,8 +116,7 @@ namespace WallpaperVisualizer
 
             for (int i = 0; i < length; i++)
             {
-                //Imaginary looks better in my taste
-                target[i] = Math.Abs(new System.Numerics.Complex(data[i].X, data[i].Y).Imaginary);
+                target[i] = Math.Abs(Math.Pow(Math.Abs(data[i].X),1.2)/2);
             }
             return target;
         }

@@ -33,7 +33,7 @@ namespace WallpaperVisualizer
             GL.ShaderSource(address, code);
             GL.CompileShader(address);
             GL.AttachShader(ProgramID, address);
-            Console.WriteLine(GL.GetShaderInfoLog(address));
+            //Console.WriteLine(GL.GetShaderInfoLog(address));
         }
 
         public void LoadShaderFromString(String code, ShaderType type)
@@ -67,7 +67,7 @@ namespace WallpaperVisualizer
         {
             GL.LinkProgram(ProgramID);
 
-            Console.WriteLine(GL.GetProgramInfoLog(ProgramID));
+            //Console.WriteLine(GL.GetProgramInfoLog(ProgramID));
 
             GL.GetProgram(ProgramID, GetProgramParameterName.ActiveAttributes, out AttributeCount);
             GL.GetProgram(ProgramID, GetProgramParameterName.ActiveUniforms, out UniformCount);
@@ -83,7 +83,7 @@ namespace WallpaperVisualizer
                 info.name = name;
                 info.address = GL.GetAttribLocation(ProgramID, info.name);
                 Attributes.Add(name.ToString(), info);
-                Console.WriteLine(name + " " + info.address);
+                //Console.WriteLine(name + " " + info.address);
             }
 
             for (int i = 0; i < UniformCount; i++)
@@ -98,7 +98,7 @@ namespace WallpaperVisualizer
                 info.name = name;
                 Uniforms.Add(name, info);
                 info.address = GL.GetUniformLocation(ProgramID, info.name);
-                Console.WriteLine(name + " " + info.address);
+                //Console.WriteLine(name + " " + info.address);
             }
         }
 

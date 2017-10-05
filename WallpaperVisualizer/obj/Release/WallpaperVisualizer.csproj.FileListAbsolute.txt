@@ -1,0 +1,8 @@
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\WallpaperVisualizer.exe
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\bin\Release\WallpaperVisualizer.pdb
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\Release\WallpaperVisualizer.csproj.CoreCompileInputs.cache
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\Release\WallpaperVisualizer.exe
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\Release\WallpaperVisualizer.pdb
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\Release\WallpaperVisualizer.csprojResolveAssemblyReference.cache
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\Release\WallpaperVisualizer.Properties.Resources.resources
+C:\Users\Aleks.Aleks-PC\Documents\Visual Studio 2017\Projects\WallpaperVisualizer\WallpaperVisualizer\obj\Release\WallpaperVisualizer.csproj.GenerateResource.Cache
